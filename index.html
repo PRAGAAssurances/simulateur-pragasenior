@@ -307,6 +307,9 @@ const PDF_GARANTIES_SENIOR = "data:application/pdf;base64,JVBERi0xLjcNCiW1tbW1DQ
   .result-table tbody td { padding:13px 12px; border-bottom:1px solid var(--n100); vertical-align:middle; }
   .td-name { font-size:0.9rem; font-weight:600; color:var(--n900); }
   .td-meta { font-size:0.775rem; color:var(--n500); margin-top:2px; }
+
+  .td-ann { font-size:0.75rem; color:var(--n500); font-weight:500; margin-top:3px; white-space:nowrap; text-align:right; }
+  .total-block .total-annuel { font-size:0.85rem; font-weight:600; color:var(--n500); margin-top:6px; }
   .td-amt { text-align:right; font-size:0.9375rem; font-weight:700; white-space:nowrap; }
   .td-amt.c100 { color:var(--n700); }
   .td-amt.c200 { color:var(--blue); }
@@ -471,14 +474,17 @@ const PDF_GARANTIES_SENIOR = "data:application/pdf;base64,JVBERi0xLjcNCiW1tbW1DQ
       <div class="total-block total100">
         <div class="total-tag">Option 100 %</div>
         <div class="total-amount" id="tot100">—</div>
+        <div class="total-annuel" id="tot100ann" style="display:none">—</div>
       </div>
       <div class="total-block total200">
         <div class="total-tag">Option 200 %</div>
         <div class="total-amount" id="tot200">—</div>
+        <div class="total-annuel" id="tot200ann" style="display:none">—</div>
       </div>
       <div class="total-block total300">
         <div class="total-tag">Option 300 %</div>
         <div class="total-amount" id="tot300">—</div>
+        <div class="total-annuel" id="tot300ann" style="display:none">—</div>
       </div>
     </div>
 
@@ -661,17 +667,38 @@ function calc() {
     tot300 += m300;
 
     const tr = document.createElement('tr');
+    // Montants annuels théoriques (coef=1)
+    const base100ann = base100 !== null ? base100 / coef : null;
+    const m200ann = m200 / coef;
+    const m300ann = m300 / coef;
+    const ann100cell = isProrata && base100ann!==null ? `<div class="td-ann">${fmt(base100ann)} / an</div>` : '';
+    const ann200cell = isProrata ? `<div class="td-ann">${fmt(m200ann)} / an</div>` : '';
+    const ann300cell = isProrata ? `<div class="td-ann">${fmt(m300ann)} / an</div>` : '';
     tr.innerHTML = `
       <td><div class="td-name">${b.qualite}</div><div class="td-meta">${age} ans</div></td>
-      <td class="td-amt ${base100!==null?'c100':'muted'}">${base100!==null ? fmt(base100) : '—'}</td>
-      <td class="td-amt c200">${fmt(m200)}</td>
-      <td class="td-amt c300">${fmt(m300)}</td>`;
+      <td class="td-amt ${base100!==null?'c100':'muted'}">${base100!==null ? fmt(base100) : '—'}${ann100cell}</td>
+      <td class="td-amt c200">${fmt(m200)}${ann200cell}</td>
+      <td class="td-amt c300">${fmt(m300)}${ann300cell}</td>`;
     tbody.appendChild(tr);
   });
 
   document.getElementById('tot100').textContent = fmt(tot100);
   document.getElementById('tot200').textContent = fmt(tot200);
   document.getElementById('tot300').textContent = fmt(tot300);
+
+  // Totaux annuels théoriques (affiché uniquement si proratisation active)
+  if(isProrata){
+    document.getElementById('tot100ann').textContent = fmt(tot100 / coef) + ' / an';
+    document.getElementById('tot200ann').textContent = fmt(tot200 / coef) + ' / an';
+    document.getElementById('tot300ann').textContent = fmt(tot300 / coef) + ' / an';
+    document.getElementById('tot100ann').style.display = 'block';
+    document.getElementById('tot200ann').style.display = 'block';
+    document.getElementById('tot300ann').style.display = 'block';
+  } else {
+    document.getElementById('tot100ann').style.display = 'none';
+    document.getElementById('tot200ann').style.display = 'none';
+    document.getElementById('tot300ann').style.display = 'none';
+  }
 
   const noteAP = apSeniorMode
     ? ` La formule 100 % est familiale (AP ≥ 62 ans) : elle n'est facturée que pour l'adhérent principal (les autres bénéficiaires affichent « — » en option 100 %).`
